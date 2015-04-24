@@ -516,6 +516,36 @@ struct clk *tegra_clk_register_periph_gate(const char *name,
 		const char *parent_name, u8 gate_flags, void __iomem *clk_base,
 		unsigned long flags, int clk_num, int *enable_refcnt);
 
+struct tegra_clk_periph_fixed {
+	struct clk_hw hw;
+	void __iomem *base;
+	const struct tegra_clk_periph_regs *regs;
+	unsigned int mul;
+	unsigned int div;
+	unsigned int num;
+};
+
+struct clk *tegra_clk_register_periph_fixed(const char *name,
+					    const char *parent,
+					    unsigned long flags,
+					    void __iomem *base,
+					    unsigned int mul,
+					    unsigned int div,
+					    unsigned int num);
+
+struct tegra_clk_parent {
+	const char *name;
+	u32 mask;
+	u32 value;
+};
+
+struct clk *tegra_clk_register_sor(const char *name, void __iomem *base,
+				   const char **parent_names,
+				   const struct tegra_clk_parent *parents,
+				   unsigned int num_parents,
+				   unsigned long flags, unsigned int source,
+				   unsigned int num);
+
 /**
  * struct clk-periph - peripheral clock
  *
