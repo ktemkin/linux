@@ -143,6 +143,7 @@ ifneq ($(CONFIG_BCM4358),)
   DHDCFLAGS += -DDHD_WAKE_EVENT_STATUS
 
 ifneq ($(CONFIG_BCMDHD_SDIO),)
+	DHDCFLAGS += $(warning WTF SERIOUSLY)
   DHDCFLAGS += -DBDC -DOOB_INTR_ONLY -DHW_OOB -DDHD_BCMEVENTS -DMMC_SDIO_ABORT
   DHDCFLAGS += -DBCMSDIO -DBCMLXSDMMC -DUSE_SDIOFIFO_IOVAR
   DHDCFLAGS += -DPROP_TXSTATUS
@@ -301,9 +302,9 @@ ifneq ($(CONFIG_WAKELOCK),)
   DHDCFLAGS += -DCONFIG_HAS_WAKELOCK
 endif
 
-EXTRA_CFLAGS += $(DHDCFLAGS) -DDHD_DEBUG
-EXTRA_CFLAGS += -DSRCBASE=\"$(src)\"
-EXTRA_CFLAGS += -I$(src)/include/ -I$(src)/
+ccflags-y += $(DHDCFLAGS) -DDHD_DEBUG
+ccflags-y += -DSRCBASE=\"$(src)\"
+ccflags-y += -I$(src)/include/ -I$(src)/
 KBUILD_CFLAGS += -I$(LINUXDIR)/include -I$(shell pwd)
 
 DHDOFILES := dhd_pno.o dhd_common.o dhd_ip.o dhd_custom_gpio.o \

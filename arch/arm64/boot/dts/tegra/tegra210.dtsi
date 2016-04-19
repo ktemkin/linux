@@ -394,17 +394,17 @@
 		      <0x0 0x70000008 0x0 0x04>;   /* Strapping options */
 	};
 
-	tegra_agic: agic-controller {
-		compatible = "nvidia,tegra210-agic";
-		#interrupt-cells = <3>;
-		interrupt-controller;
-		no-gic-extension;
-		not-per-cpu;
-		reg = <0x0 0x702f9000 0x0 0x2000>,
-		      <0x0 0x702fa000 0x0 0x2000>;
-		interrupts = <0 102 0xf04>;
-		status = "disabled";
-	};
+	//tegra_agic: agic-controller {
+	//	compatible = "nvidia,tegra210-agic";
+	//	#interrupt-cells = <3>;
+	//	interrupt-controller;
+	//	no-gic-extension;
+	//	not-per-cpu;
+	//	reg = <0x0 0x702f9000 0x0 0x2000>,
+	//	      <0x0 0x702fa000 0x0 0x2000>;
+	//	interrupts = <0 102 0xf04>;
+	//	status = "disabled";
+	//};
 
 	tegra_axbar: ahub {
 		compatible = "nvidia,tegra210-axbar";
@@ -420,20 +420,20 @@
 		         <&tegra_car TEGRA210_CLK_XBAR_APE>;
 		clock-names = "ahub", "pll_a_out0", "xbar.ape";
 
-		tegra_admaif: admaif@0x702d0000 {
-			compatible = "nvidia,tegra210-admaif";
-			reg = <0x702d0000 0x800>;
-			dmas = <&adma 1>, <&adma 1>, <&adma 2>, <&adma 2>,
-				<&adma 3>, <&adma 3>, <&adma 4>, <&adma 4>,
-				<&adma 5>, <&adma 5>, <&adma 6>, <&adma 6>,
-				<&adma 7>, <&adma 7>, <&adma 8>, <&adma 8>,
-				<&adma 9>, <&adma 9>, <&adma 10>, <&adma 10>;
-			dma-names = "rx1", "tx1", "rx2", "tx2", "rx3", "tx3",
-				"rx4", "tx4", "rx5", "tx5", "rx6", "tx6",
-				"rx7", "tx7", "rx8", "tx8", "rx9", "tx9",
-				"rx10", "tx10";
-			status = "disabled";
-		};
+		//tegra_admaif: admaif@0x702d0000 {
+		//	compatible = "nvidia,tegra210-admaif";
+		//	reg = <0x702d0000 0x800>;
+		//	dmas = <&adma 1>, <&adma 1>, <&adma 2>, <&adma 2>,
+		//		<&adma 3>, <&adma 3>, <&adma 4>, <&adma 4>,
+		//		<&adma 5>, <&adma 5>, <&adma 6>, <&adma 6>,
+		//		<&adma 7>, <&adma 7>, <&adma 8>, <&adma 8>,
+		//		<&adma 9>, <&adma 9>, <&adma 10>, <&adma 10>;
+		//	dma-names = "rx1", "tx1", "rx2", "tx2", "rx3", "tx3",
+		//		"rx4", "tx4", "rx5", "tx5", "rx6", "tx6",
+		//		"rx7", "tx7", "rx8", "tx8", "rx9", "tx9",
+		//		"rx10", "tx10";
+		//	status = "disabled";
+		//};
 
 		tegra_sfc1: sfc@702d2000 {
 			compatible = "nvidia,tegra210-sfc";
@@ -1205,41 +1205,41 @@
 		ranges;
 	};
 
-	adma: adma@702e2000 {
-		compatible = "nvidia,tegra210-adma";
-		reg = <0x0 0x702e2000 0x0 0x2000>;
-		interrupt-parent = <&tegra_agic>;
-		interrupts = <GIC_SPI INT_ADMA_EOT0 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT1 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT2 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT3 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT4 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT5 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT6 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT7 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT8 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT9 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT10 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT11 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT12 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT13 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT14 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT15 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT16 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT17 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT18 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT19 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT20 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI INT_ADMA_EOT21 IRQ_TYPE_LEVEL_HIGH>;
-		#dma-cells = <1>;
-		dma-channels = <22>;
+	//adma: adma@702e2000 {
+	//	compatible = "nvidia,tegra210-adma";
+	//	reg = <0x0 0x702e2000 0x0 0x2000>;
+	//	interrupt-parent = <&tegra_agic>;
+	//	interrupts = <GIC_SPI INT_ADMA_EOT0 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT1 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT2 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT3 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT4 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT5 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT6 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT7 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT8 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT9 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT10 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT11 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT12 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT13 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT14 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT15 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT16 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT17 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT18 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT19 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT20 IRQ_TYPE_LEVEL_HIGH>,
+	//		     <GIC_SPI INT_ADMA_EOT21 IRQ_TYPE_LEVEL_HIGH>;
+	//	#dma-cells = <1>;
+	//	dma-channels = <22>;
 
-		clocks = <&tegra_car TEGRA210_CLK_D_AUDIO>,
-			 <&tegra_car TEGRA210_CLK_ADMA_APE>;
-		clock-names = "adma", "adma.ape";
+	//	clocks = <&tegra_car TEGRA210_CLK_D_AUDIO>,
+	//		 <&tegra_car TEGRA210_CLK_ADMA_APE>;
+	//	clock-names = "adma", "adma.ape";
 
-		status = "disabled";
-	};
+	//	status = "disabled";
+	//};
 
 	i2c1: i2c@7000c000 {
 		compatible = "nvidia,tegra210-i2c", "nvidia,tegra124-i2c";
@@ -1608,92 +1608,92 @@
 				   1426050>;	// 1913 MHz
 		};
 
-		cpu@1 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a57", "arm,armv8";
-			reg = <0x0 0x1>;
-			enable-method = "psci";
-			cpu-idle-states = <&C7>;
-			next-level-cache = <&L2>;
-			current = <  60960	//   51 MHz
-				    109970	//  102 MHz
-				    172130	//  204 MHz
-				    234290	//  306 MHz
-				    292560	//  408 MHz
-				    354420	//  510 MHz
-				    411500	//  612 MHz
-				    467380	//  714 MHz
-				    525650	//  816 MHz
-				    584820	//  918 MHz
-				    573170	// 1020 MHz
-				    581540	// 1122 MHz
-				    657440	// 1224 MHz
-				    773390	// 1326 MHz
-				    896810	// 1428 MHz
-				   1048620	// 1530 MHz
-				   1235100	// 1632 MHz
-				   1359410	// 1734 MHz
-				   1375250	// 1836 MHz
-				   1426050>;	// 1913 MHz
-		};
+		//cpu@1 {
+		//	device_type = "cpu";
+		//	compatible = "arm,cortex-a57", "arm,armv8";
+		//	reg = <0x0 0x1>;
+		//	enable-method = "psci";
+		//	cpu-idle-states = <&C7>;
+		//	next-level-cache = <&L2>;
+		//	current = <  60960	//   51 MHz
+		//		    109970	//  102 MHz
+		//		    172130	//  204 MHz
+		//		    234290	//  306 MHz
+		//		    292560	//  408 MHz
+		//		    354420	//  510 MHz
+		//		    411500	//  612 MHz
+		//		    467380	//  714 MHz
+		//		    525650	//  816 MHz
+		//		    584820	//  918 MHz
+		//		    573170	// 1020 MHz
+		//		    581540	// 1122 MHz
+		//		    657440	// 1224 MHz
+		//		    773390	// 1326 MHz
+		//		    896810	// 1428 MHz
+		//		   1048620	// 1530 MHz
+		//		   1235100	// 1632 MHz
+		//		   1359410	// 1734 MHz
+		//		   1375250	// 1836 MHz
+		//		   1426050>;	// 1913 MHz
+		//};
 
-		cpu@2 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a57", "arm,armv8";
-			reg = <0x0 0x2>;
-			enable-method = "psci";
-			cpu-idle-states = <&C7>;
-			next-level-cache = <&L2>;
-			current = <  60960	//   51 MHz
-				    109970	//  102 MHz
-				    172130	//  204 MHz
-				    234290	//  306 MHz
-				    292560	//  408 MHz
-				    354420	//  510 MHz
-				    411500	//  612 MHz
-				    467380	//  714 MHz
-				    525650	//  816 MHz
-				    584820	//  918 MHz
-				    573170	// 1020 MHz
-				    581540	// 1122 MHz
-				    657440	// 1224 MHz
-				    773390	// 1326 MHz
-				    896810	// 1428 MHz
-				   1048620	// 1530 MHz
-				   1235100	// 1632 MHz
-				   1359410	// 1734 MHz
-				   1375250	// 1836 MHz
-				   1426050>;	// 1913 MHz
-		};
+		//cpu@2 {
+		//	device_type = "cpu";
+		//	compatible = "arm,cortex-a57", "arm,armv8";
+		//	reg = <0x0 0x2>;
+		//	enable-method = "psci";
+		//	cpu-idle-states = <&C7>;
+		//	next-level-cache = <&L2>;
+		//	current = <  60960	//   51 MHz
+		//		    109970	//  102 MHz
+		//		    172130	//  204 MHz
+		//		    234290	//  306 MHz
+		//		    292560	//  408 MHz
+		//		    354420	//  510 MHz
+		//		    411500	//  612 MHz
+		//		    467380	//  714 MHz
+		//		    525650	//  816 MHz
+		//		    584820	//  918 MHz
+		//		    573170	// 1020 MHz
+		//		    581540	// 1122 MHz
+		//		    657440	// 1224 MHz
+		//		    773390	// 1326 MHz
+		//		    896810	// 1428 MHz
+		//		   1048620	// 1530 MHz
+		//		   1235100	// 1632 MHz
+		//		   1359410	// 1734 MHz
+		//		   1375250	// 1836 MHz
+		//		   1426050>;	// 1913 MHz
+		//};
 
-		cpu@3 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a57", "arm,armv8";
-			reg = <0x0 0x3>;
-			enable-method = "psci";
-			cpu-idle-states = <&C7>;
-			next-level-cache = <&L2>;
-			current = <  60960	//   51 MHz
-				    109970	//  102 MHz
-				    172130	//  204 MHz
-				    234290	//  306 MHz
-				    292560	//  408 MHz
-				    354420	//  510 MHz
-				    411500	//  612 MHz
-				    467380	//  714 MHz
-				    525650	//  816 MHz
-				    584820	//  918 MHz
-				    573170	// 1020 MHz
-				    581540	// 1122 MHz
-				    657440	// 1224 MHz
-				    773390	// 1326 MHz
-				    896810	// 1428 MHz
-				   1048620	// 1530 MHz
-				   1235100	// 1632 MHz
-				   1359410	// 1734 MHz
-				   1375250	// 1836 MHz
-				   1426050>;	// 1913 MHz
-		};
+		//cpu@3 {
+		//	device_type = "cpu";
+		//	compatible = "arm,cortex-a57", "arm,armv8";
+		//	reg = <0x0 0x3>;
+		//	enable-method = "psci";
+		//	cpu-idle-states = <&C7>;
+		//	next-level-cache = <&L2>;
+		//	current = <  60960	//   51 MHz
+		//		    109970	//  102 MHz
+		//		    172130	//  204 MHz
+		//		    234290	//  306 MHz
+		//		    292560	//  408 MHz
+		//		    354420	//  510 MHz
+		//		    411500	//  612 MHz
+		//		    467380	//  714 MHz
+		//		    525650	//  816 MHz
+		//		    584820	//  918 MHz
+		//		    573170	// 1020 MHz
+		//		    581540	// 1122 MHz
+		//		    657440	// 1224 MHz
+		//		    773390	// 1326 MHz
+		//		    896810	// 1428 MHz
+		//		   1048620	// 1530 MHz
+		//		   1235100	// 1632 MHz
+		//		   1359410	// 1734 MHz
+		//		   1375250	// 1836 MHz
+		//		   1426050>;	// 1913 MHz
+		//};
 
 		idle-states {
 			entry-method = "psci";
@@ -1715,7 +1715,7 @@
 
 	psci {
 		compatible = "arm,psci-1.0";
-		method = "smc";
+		method = "hvc";
 	};
 
 	arch_timer: timer {

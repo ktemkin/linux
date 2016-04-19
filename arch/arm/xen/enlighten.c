@@ -168,11 +168,15 @@ static void xen_percpu_init(void)
 	info.mfn = __pa(vcpup) >> PAGE_SHIFT;
 	info.offset = offset_in_page(vcpup);
 
+  pr_info("Issuing hypercall...\n");
 	err = HYPERVISOR_vcpu_op(VCPUOP_register_vcpu_info, cpu, &info);
 	BUG_ON(err);
 	per_cpu(xen_vcpu, cpu) = vcpup;
 
+  pr_info("Hypercall complete!\n");
 	enable_percpu_irq(xen_events_irq, 0);
+
+  pr_info("Putting cpu...\n");
 	put_cpu();
 }
 
@@ -327,6 +331,7 @@ static int __init xen_guest_init(void)
 
 	register_cpu_notifier(&xen_cpu_notifier);
 
+  pr_info("Finished xen_guest_init.\n");
 	return 0;
 }
 early_initcall(xen_guest_init);

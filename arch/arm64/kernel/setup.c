@@ -65,6 +65,7 @@
 #include <asm/traps.h>
 #include <asm/memblock.h>
 #include <asm/efi.h>
+#include <asm/xen/hypercall.h>
 
 unsigned int processor_id;
 EXPORT_SYMBOL(processor_id);
@@ -416,6 +417,29 @@ static inline void __init relocate_initrd(void)
 
 u64 __cpu_logical_map[NR_CPUS] = { [0 ... NR_CPUS-1] = INVALID_HWID };
 
+static void hack_xen_earlycon_write(struct console *con, const char * s, const unsigned n)
+{
+    #ifdef CONFIG_XEN
+        HYPERVISOR_console_io(CONSOLEIO_write, n, (char *)s);
+    #endif
+}
+
+static struct console early_console_dev = {
+  .name = "earlycon",
+  .write = hack_xen_earlycon_write,
+  .flags = CON_PRINTBUFFER,
+  .index = -1
+};
+
+void setup_hack_early_printk(void)
+{
+    hack_xen_earlycon_write(NULL, "Using hacked-in Xen early console.\n", 35);
+    early_console = &early_console_dev;
+    register_console(&early_console_dev);
+    pr_warn("HACKING THE MAINFRAME\n");
+
+}
+
 void __init setup_arch(char **cmdline_p)
 {
 	setup_processor();
@@ -433,6 +457,7 @@ void __init setup_arch(char **cmdline_p)
 	early_ioremap_init();
 
 	parse_early_param();
+  setup_hack_early_printk();
 
 	/*
 	 *  Unmask asynchronous aborts after bringing up possible earlycon.

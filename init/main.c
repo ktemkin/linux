@@ -580,30 +580,49 @@ asmlinkage __visible void __init start_kernel(void)
 	context_tracking_init();
 	radix_tree_init();
 	/* init some links before init_ISA_irqs() */
+  pr_info("-- %d\n", __LINE__);
 	early_irq_init();
+  pr_info("-- %d\n", __LINE__);
 	init_IRQ();
+  pr_info("-- %d\n", __LINE__);
 	tick_init();
+  pr_info("-- %d\n", __LINE__);
 	rcu_init_nohz();
+  pr_info("-- %d\n", __LINE__);
 	init_timers();
+  pr_info("-- %d\n", __LINE__);
 	hrtimers_init();
+  pr_info("-- %d\n", __LINE__);
 	softirq_init();
+  pr_info("-- %d\n", __LINE__);
 	timekeeping_init();
+  pr_info("-- %d\n", __LINE__);
 	time_init();
+  pr_info("-- %d\n", __LINE__);
 	sched_clock_postinit();
+  pr_info("-- %d\n", __LINE__);
 	perf_event_init();
+  pr_info("-- %d\n", __LINE__);
 	profile_init();
+  pr_info("-- %d\n", __LINE__);
 	call_function_init();
+  pr_info("-- %d\n", __LINE__);
 	WARN(!irqs_disabled(), "Interrupts were enabled early\n");
+  pr_info("-- %d\n", __LINE__);
 	early_boot_irqs_disabled = false;
+  pr_info("-- %d\n", __LINE__);
 	local_irq_enable();
+  pr_info("-- %d\n", __LINE__);
 
 	kmem_cache_init_late();
+  pr_info("-- %d\n", __LINE__);
 
 	/*
 	 * HACK ALERT! This is early. We're enabling the console before
 	 * we've done PCI setups etc, and console_init() must be aware of
 	 * this. But we do want output early, in case something goes wrong.
 	 */
+  pr_info("-- %d\n", __LINE__);
 	console_init();
 	if (panic_later)
 		panic("Too many boot %s vars at `%s'", panic_later,
@@ -880,7 +899,9 @@ static void __init do_basic_setup(void)
 	init_irq_proc();
 	do_ctors();
 	usermodehelper_enable();
+  pr_info("Doing initcalls...\n");
 	do_initcalls();
+  pr_info("Done with initcalls.\n");
 	random_int_secret_init();
 }
 
@@ -995,13 +1016,18 @@ static noinline void __init kernel_init_freeable(void)
 
 	smp_prepare_cpus(setup_max_cpus);
 
+  pr_info("Doing presmp setup...\n");
 	do_pre_smp_initcalls();
+  pr_info("Finished presmp setup.\n");
+
 	lockup_detector_init();
 
 	smp_init();
 	sched_init_smp();
 
+  pr_info("Doing basic setup...\n");
 	do_basic_setup();
+  pr_info("Finished basic setup.\n");
 
 	/* Open the /dev/console on the rootfs, this should never fail */
 	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)

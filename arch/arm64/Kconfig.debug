@@ -89,4 +89,7 @@ config DEBUG_ALIGN_RODATA
 
 	  If in doubt, say N
 
+config EARLY_PRINTK
+  bool "oh gods why"
+
 endmenu

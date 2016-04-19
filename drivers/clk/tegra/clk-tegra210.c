@@ -3327,6 +3327,9 @@ static struct syscore_ops tegra_clk_syscore_ops = {
  */
 static void __init tegra210_clock_apply_init_table(void)
 {
+  // XXX HACK XXX
+  return;
+
 	tegra_init_from_table(common_init_table, clks, TEGRA210_CLK_CLK_MAX);
 	tegra_init_from_table(tegra210_init_table, clks, TEGRA210_CLK_CLK_MAX);
 }

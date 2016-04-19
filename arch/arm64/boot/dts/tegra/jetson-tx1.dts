@@ -1,0 +1,10 @@
+/dts-v1/;
+
+#include "tegra210-jetson-tx1.dtsi"
+#include "xen-chosen.dtsi"
+
+/ {
+	model = "Google Tegra210 Smaug Rev 2 only";
+	compatible = "google,smaug-rev2", "google,smaug", "nvidia,tegra210";
+};
+

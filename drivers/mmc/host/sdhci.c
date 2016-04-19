@@ -1027,7 +1027,10 @@ void sdhci_send_command(struct sdhci_host *host, struct mmc_command *cmd)
 		timeout += DIV_ROUND_UP(cmd->busy_timeout, 1000) * HZ + HZ;
 	else
 		timeout += 10 * HZ;
-	mod_timer(&host->timer, timeout);
+
+  //XXX XXX XXX
+  // THIS IS THE WORST THING EVER
+	//mod_timer(&host->timer, timeout);
 
 	host->cmd = cmd;
 	host->busy_handle = 0;
