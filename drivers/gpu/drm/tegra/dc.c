@@ -1332,6 +1332,14 @@ static irqreturn_t tegra_dc_irq(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
+void tegra_dc_force_update(struct drm_crtc *crtc)
+{
+	WARN_ON(drm_crtc_vblank_get(crtc) != 0);
+	tegra_crtc_atomic_flush(crtc);
+	drm_crtc_wait_one_vblank(crtc);
+	drm_crtc_vblank_put(crtc);
+}
+
 static int tegra_dc_show_regs(struct seq_file *s, void *data)
 {
 	struct drm_info_node *node = s->private;
