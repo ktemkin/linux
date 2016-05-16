@@ -183,6 +183,36 @@ unreference:
 	return ERR_PTR(err);
 }
 
+static int magical_wonderful_mmap(struct fb_info *info, struct vm_area_struct *vma)
+{
+    struct drm_fb_helper *fb_helper = info->par;
+    struct drm_framebuffer *fb = fb_helper->fb;
+    struct tegra_fb *tfb = to_tegra_fb(fb);
+    struct tegra_bo *bo = tfb->planes[0];
+
+    struct page **next_page_to_map = bo->pages;
+
+    uintptr_t next_virtual_address = vma->vm_start;
+    uintptr_t data_to_map = vma->vm_end - vma->vm_start;
+
+    vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
+
+    while(data_to_map > 0) {
+        vm_insert_page(vma, next_virtual_address, *next_page_to_map);
+
+        next_page_to_map++;
+        next_virtual_address += PAGE_SIZE;
+
+
+        if(data_to_map > PAGE_SIZE)
+          data_to_map -= PAGE_SIZE;
+        else
+          data_to_map = 0;
+    }
+
+    return 0;
+}
+
 #ifdef CONFIG_DRM_FBDEV_EMULATION
 static struct fb_ops tegra_fb_ops = {
 	.owner = THIS_MODULE,
@@ -194,6 +224,7 @@ static struct fb_ops tegra_fb_ops = {
 	.fb_blank = drm_fb_helper_blank,
 	.fb_pan_display = drm_fb_helper_pan_display,
 	.fb_setcmap = drm_fb_helper_setcmap,
+  .fb_mmap = magical_wonderful_mmap,
 };
 
 static int tegra_fbdev_probe(struct drm_fb_helper *helper,
@@ -271,6 +302,8 @@ static int tegra_fbdev_probe(struct drm_fb_helper *helper,
 	info->screen_size = size;
 	info->fix.smem_start = (unsigned long)(bo->paddr + offset);
 	info->fix.smem_len = size;
+
+  DRM_DEBUG_KMS("Framebuffer mapped; location: %p, paddr: %p size %lx", bo->vaddr, page_to_phys(bo->pages[0]), size);
 
 	return 0;
 

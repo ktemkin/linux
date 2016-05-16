@@ -29,6 +29,7 @@ struct tegra_dc_soc_info {
 	bool supports_block_linear;
 	unsigned int pitch_align;
 	bool has_powergate;
+	bool has_v2_blend;
 };
 
 struct tegra_plane {
@@ -129,10 +130,12 @@ static int tegra_dc_format(u32 fourcc, u32 *format, u32 *swap)
 		*swap = BYTE_SWAP_NOSWAP;
 
 	switch (fourcc) {
+	case DRM_FORMAT_ABGR8888:
 	case DRM_FORMAT_XBGR8888:
 		*format = WIN_COLOR_DEPTH_R8G8B8A8;
 		break;
 
+	case DRM_FORMAT_ARGB8888:
 	case DRM_FORMAT_XRGB8888:
 		*format = WIN_COLOR_DEPTH_B8G8R8A8;
 		break;
@@ -237,8 +240,8 @@ static inline u32 compute_initial_dda(unsigned int in)
 	return dfixed_frac(inf);
 }
 
-static void tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
-				  const struct tegra_dc_window *window)
+static void __tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
+				  const struct tegra_dc_window *window, unsigned long select)
 {
 	unsigned h_offset, v_offset, h_size, v_size, h_dda, v_dda, bpp;
 	unsigned long value, flags;
@@ -256,7 +259,7 @@ static void tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
 
 	spin_lock_irqsave(&dc->lock, flags);
 
-	value = WINDOW_A_SELECT << index;
+	value = select << index;
 	tegra_dc_writel(dc, value, DC_CMD_DISPLAY_WINDOW_HEADER);
 
 	tegra_dc_writel(dc, window->format, DC_WIN_COLOR_DEPTH);
@@ -299,6 +302,7 @@ static void tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
 	tegra_dc_writel(dc, 0, DC_WIN_BUF_STRIDE);
 
 	tegra_dc_writel(dc, window->base[0], DC_WINBUF_START_ADDR);
+  DRM_DEBUG_KMS("WINBUF = %lx\n", window->base[0]);
 
 	if (yuv && planar) {
 		tegra_dc_writel(dc, window->base[1], DC_WINBUF_START_ADDR_U);
@@ -309,11 +313,15 @@ static void tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
 		tegra_dc_writel(dc, window->stride[0], DC_WIN_LINE_STRIDE);
 	}
 
+  DRM_DEBUG_KMS("STRIDE = %lx\n", window->stride[0]);
+
 	if (window->bottom_up)
 		v_offset += window->src.h - 1;
 
 	tegra_dc_writel(dc, h_offset, DC_WINBUF_ADDR_H_OFFSET);
 	tegra_dc_writel(dc, v_offset, DC_WINBUF_ADDR_V_OFFSET);
+  DRM_DEBUG_KMS("H_OFFSET = %x\n", h_offset);
+  DRM_DEBUG_KMS("V_OFFSET = %x\n", v_offset);
 
 	if (dc->soc->supports_block_linear) {
 		unsigned long height = window->tiling.value;
@@ -333,7 +341,10 @@ static void tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
 			break;
 		}
 
+    DRM_DEBUG_KMS("SURF_KIND = %lx\n", value);
 		tegra_dc_writel(dc, value, DC_WINBUF_SURFACE_KIND);
+
+
 	} else {
 		switch (window->tiling.mode) {
 		case TEGRA_BO_TILING_MODE_PITCH:
@@ -354,6 +365,7 @@ static void tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
 			break;
 		}
 
+    DRM_DEBUG_KMS("ADDR_MODE = %lx\n", value);
 		tegra_dc_writel(dc, value, DC_WIN_BUFFER_ADDR_MODE);
 	}
 
@@ -380,34 +392,81 @@ static void tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
 
 	tegra_dc_writel(dc, value, DC_WIN_WIN_OPTIONS);
 
-	/*
-	 * Disable blending and assume Window A is the bottom-most window,
-	 * Window C is the top-most window and Window B is in the middle.
-	 */
-	tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_NOKEY);
-	tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_1WIN);
 
-	switch (index) {
-	case 0:
-		tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_2WIN_X);
-		tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_2WIN_Y);
-		tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_3WIN_XY);
-		break;
 
-	case 1:
-		tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_2WIN_X);
-		tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_2WIN_Y);
-		tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_3WIN_XY);
-		break;
+	if (dc->soc->has_v2_blend)  {
+    DRM_DEBUG_KMS("Using V2 blending...\n");
+		switch (window->format) {
+		case WIN_COLOR_DEPTH_B5G5R5A:
+		case WIN_COLOR_DEPTH_B4G4R4A4:
+		case WIN_COLOR_DEPTH_AB5G5R5:
+		case WIN_COLOR_DEPTH_B8G8R8A8:
+		case WIN_COLOR_DEPTH_R8G8B8A8:
+			/* Pre-mult alpha blending */
+			tegra_dc_writel(dc, 0xff00, DC_WIN_BLEND_LAYER_CONTROL);
+			tegra_dc_writel(dc, 0x3262, DC_WIN_BLEND_MATCH_SELECT);
+			tegra_dc_writel(dc, 0x3222, DC_WIN_BLEND_NOMATCH_SELECT);
+			break;
+		default:
+			/* No blending */
+			tegra_dc_writel(dc, 0x1000000, DC_WIN_BLEND_LAYER_CONTROL);
+			tegra_dc_writel(dc, 0x0, DC_WIN_BLEND_MATCH_SELECT);
+			tegra_dc_writel(dc, 0x0, DC_WIN_BLEND_NOMATCH_SELECT);
+			break;
+		}
+	} else {
+    DRM_DEBUG_KMS("Using V1 blending, wtf.\n");
+		/*
+		 * Disable blending and assume Window A is the bottom-most
+		 * window, Window C is the top-most window and Window B is in
+		 * the middle.
+		 */
+		tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_NOKEY);
+		tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_1WIN);
 
-	case 2:
-		tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_2WIN_X);
-		tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_2WIN_Y);
-		tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_3WIN_XY);
-		break;
+		switch (index) {
+		case 0:
+			tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_2WIN_X);
+			tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_2WIN_Y);
+			tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_3WIN_XY);
+			break;
+
+		case 1:
+			tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_2WIN_X);
+			tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_2WIN_Y);
+			tegra_dc_writel(dc, 0x000000, DC_WIN_BLEND_3WIN_XY);
+			break;
+
+		case 2:
+			tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_2WIN_X);
+			tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_2WIN_Y);
+			tegra_dc_writel(dc, 0xffff00, DC_WIN_BLEND_3WIN_XY);
+			break;
+		}
 	}
 
 	spin_unlock_irqrestore(&dc->lock, flags);
+}
+
+static void tegra_dc_setup_window(struct tegra_dc *dc, unsigned int index,
+				  const struct tegra_dc_window *window)
+{
+    __tegra_dc_setup_window(dc, index, window, WINDOW_A_SELECT);
+
+			tegra_dc_writel(dc, window->base[0], 0x0c0);
+			tegra_dc_writel(dc, window->base[0], 0x140);
+			tegra_dc_writel(dc, window->base[0], 0xbc0);
+			tegra_dc_writel(dc, window->base[0], 0xdc0);
+			tegra_dc_writel(dc, window->base[0], 0xfc0);
+
+			tegra_dc_writel(dc, (1 << 24) | 0, 0xb96);
+			tegra_dc_writel(dc, (1 << 24) | 1, 0xd96);
+      tegra_dc_writel(dc, (1 << 24) | 2, 0xf96);
+			tegra_dc_writel(dc, (1 << 24) | 3, 0x096);
+			tegra_dc_writel(dc, (1 << 24) | 4, 0x116);
+
+      tegra_dc_writel(dc, 0xFFFFFFFF, DC_DISP_BORDER_COLOR);
+
 }
 
 static void tegra_plane_destroy(struct drm_plane *plane)
@@ -589,6 +648,12 @@ static void tegra_plane_atomic_update(struct drm_plane *plane,
 	for (i = 0; i < drm_format_num_planes(fb->pixel_format); i++) {
 		struct tegra_bo *bo = tegra_fb_get_plane(fb, i);
 
+    DRM_DEBUG_KMS("Setting window base for plane %d from bo %p to value 0x%lx\n", i, bo, bo->paddr);
+    if(bo->vaddr) {
+      print_hex_dump_bytes("LINE1:", DUMP_PREFIX_OFFSET, bo->vaddr, 128);
+      print_hex_dump_bytes("LINE2:", DUMP_PREFIX_OFFSET, ((char *)bo->vaddr) + 2800, 128);
+    }
+    
 		window.base[i] = bo->paddr + fb->offsets[i];
 		window.stride[i] = fb->pitches[i];
 	}
@@ -1335,7 +1400,7 @@ static irqreturn_t tegra_dc_irq(int irq, void *data)
 void tegra_dc_force_update(struct drm_crtc *crtc)
 {
 	WARN_ON(drm_crtc_vblank_get(crtc) != 0);
-	tegra_crtc_atomic_flush(crtc);
+	tegra_crtc_atomic_flush(crtc, NULL);
 	drm_crtc_wait_one_vblank(crtc);
 	drm_crtc_vblank_put(crtc);
 }
@@ -1348,10 +1413,10 @@ static int tegra_dc_show_regs(struct seq_file *s, void *data)
 
 	drm_modeset_lock_crtc(&dc->base, NULL);
 
-	if (!dc->base.state->active) {
-		err = -EBUSY;
-		goto unlock;
-	}
+	//if (!dc->base.state->active) {
+	//	err = -EBUSY;
+	//	goto unlock;
+	//}
 
 #define DUMP_REG(name)						\
 	seq_printf(s, "%-40s %#05x %08x\n", #name, name,	\
@@ -1569,6 +1634,9 @@ static int tegra_dc_show_regs(struct seq_file *s, void *data)
 	DUMP_REG(DC_WINBUF_AD_UFLOW_STATUS);
 	DUMP_REG(DC_WINBUF_BD_UFLOW_STATUS);
 	DUMP_REG(DC_WINBUF_CD_UFLOW_STATUS);
+  DUMP_REG(DC_WIN_BLEND_LAYER_CONTROL);
+  DUMP_REG(DC_WIN_BLEND_MATCH_SELECT);
+  DUMP_REG(DC_WIN_BLEND_NOMATCH_SELECT);
 
 #undef DUMP_REG
 
@@ -1863,6 +1931,7 @@ static const struct tegra_dc_soc_info tegra20_dc_soc_info = {
 	.supports_block_linear = false,
 	.pitch_align = 8,
 	.has_powergate = false,
+	.has_v2_blend = false,
 };
 
 static const struct tegra_dc_soc_info tegra30_dc_soc_info = {
@@ -1872,6 +1941,7 @@ static const struct tegra_dc_soc_info tegra30_dc_soc_info = {
 	.supports_block_linear = false,
 	.pitch_align = 8,
 	.has_powergate = false,
+	.has_v2_blend = false,
 };
 
 static const struct tegra_dc_soc_info tegra114_dc_soc_info = {
@@ -1881,6 +1951,7 @@ static const struct tegra_dc_soc_info tegra114_dc_soc_info = {
 	.supports_block_linear = false,
 	.pitch_align = 64,
 	.has_powergate = true,
+	.has_v2_blend = false,
 };
 
 static const struct tegra_dc_soc_info tegra124_dc_soc_info = {
@@ -1890,6 +1961,7 @@ static const struct tegra_dc_soc_info tegra124_dc_soc_info = {
 	.supports_block_linear = true,
 	.pitch_align = 64,
 	.has_powergate = true,
+	.has_v2_blend = true,
 };
 
 static const struct tegra_dc_soc_info tegra210_dc_soc_info = {
@@ -1899,6 +1971,7 @@ static const struct tegra_dc_soc_info tegra210_dc_soc_info = {
 	.supports_block_linear = true,
 	.pitch_align = 64,
 	.has_powergate = true,
+  .has_v2_blend = true,
 };
 
 static const struct of_device_id tegra_dc_of_match[] = {

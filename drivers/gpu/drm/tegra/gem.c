@@ -107,6 +107,7 @@ static int tegra_bo_iommu_map(struct tegra_drm *tegra, struct tegra_bo *bo)
 	}
 
 	bo->paddr = bo->mm->start;
+  DRM_DEBUG_KMS("Mapped in bo %p to IOMMU at 0x%lx\n", bo, bo->paddr);
 
 	err = iommu_map_sg(tegra->domain, bo->paddr, bo->sgt->sgl,
 			   bo->sgt->nents, prot);
