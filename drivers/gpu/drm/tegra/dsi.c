@@ -28,6 +28,9 @@
 #include "dsi.h"
 #include "mipi-phy.h"
 
+struct tegra_dsi;
+static void tegra_dsi_soft_reset(struct tegra_dsi *);
+
 struct tegra_dsi_state {
 	struct drm_connector_state base;
 
@@ -828,6 +831,7 @@ static void tegra_dsi_encoder_disable(struct drm_encoder *encoder)
 	if (output->panel)
 		drm_panel_unprepare(output->panel);
 
+  tegra_dsi_soft_reset(dsi);
 	tegra_dsi_disable(dsi);
 
 	return;
@@ -856,6 +860,9 @@ static void tegra_dsi_encoder_enable(struct drm_encoder *encoder)
 		drm_panel_prepare(output->panel);
 
 	tegra_dsi_configure(dsi, dc->pipe, mode);
+
+  if(output->connector.display_info.bpc >= 8)
+    tegra_dc_writel(dc, DITHER_CONTROL_DISABLE, DC_DISP_DISP_COLOR_CONTROL);
 
 	/* enable display controller */
 	value = tegra_dc_readl(dc, DC_DISP_DISP_WIN_OPTIONS);
@@ -954,11 +961,15 @@ tegra_dsi_encoder_atomic_check(struct drm_encoder *encoder,
 	return err;
 }
 
-static const struct drm_encoder_helper_funcs tegra_dsi_encoder_helper_funcs = {
-	.disable = tegra_dsi_encoder_disable,
-	.enable = tegra_dsi_encoder_enable,
-	.atomic_check = tegra_dsi_encoder_atomic_check,
-};
+static void tegra_dsi_encoder_prepare(struct drm_encoder *encoder)
+{
+	tegra_dsi_encoder_disable(encoder);
+}
+
+static void tegra_dsi_encoder_commit(struct drm_encoder *encoder)
+{
+}
+
 
 static int tegra_dsi_pad_enable(struct tegra_dsi *dsi)
 {
@@ -970,9 +981,11 @@ static int tegra_dsi_pad_enable(struct tegra_dsi *dsi)
 	return 0;
 }
 
+
 static int tegra_dsi_pad_calibrate(struct tegra_dsi *dsi)
 {
 	u32 value;
+	int err;
 
 	tegra_dsi_writel(dsi, 0, DSI_PAD_CONTROL_0);
 	tegra_dsi_writel(dsi, 0, DSI_PAD_CONTROL_1);
@@ -981,19 +994,115 @@ static int tegra_dsi_pad_calibrate(struct tegra_dsi *dsi)
 	tegra_dsi_writel(dsi, 0, DSI_PAD_CONTROL_4);
 
 	/* start calibration */
-	tegra_dsi_pad_enable(dsi);
-
-	value = DSI_PAD_SLEW_UP(0x7) | DSI_PAD_SLEW_DN(0x7) |
-		DSI_PAD_LP_UP(0x1) | DSI_PAD_LP_DN(0x1) |
-		DSI_PAD_OUT_CLK(0x0);
-	tegra_dsi_writel(dsi, value, DSI_PAD_CONTROL_2);
+	value = DSI_PAD_CONTROL_VS1_PULLDN(0) | DSI_PAD_CONTROL_VS1_PDIO(0);
+	tegra_dsi_writel(dsi, value, DSI_PAD_CONTROL_0);
 
 	value = DSI_PAD_PREEMP_PD_CLK(0x3) | DSI_PAD_PREEMP_PU_CLK(0x3) |
 		DSI_PAD_PREEMP_PD(0x03) | DSI_PAD_PREEMP_PU(0x3);
 	tegra_dsi_writel(dsi, value, DSI_PAD_CONTROL_3);
 
-	return tegra_mipi_calibrate(dsi->mipi);
+	err = tegra_mipi_calibrate(dsi->mipi);
+	if (err < 0)
+		return err;
+
+	if (dsi->slave)
+		return tegra_dsi_pad_calibrate(dsi->slave);
+
+	return 0;
 }
+
+//static inline void tegra_dsi_set_dc_active(struct tegra_dsi *dsi, bool active)
+//{
+//	if (dsi->master)
+//		dsi->master->dc_active = active;
+//	else
+//		dsi->dc_active = active;
+//}
+
+static void tegra_dsi_encoder_dpms(struct drm_encoder *encoder, int mode)
+{
+	struct tegra_output *output = encoder_to_output(encoder);
+	struct tegra_dsi *dsi = to_dsi(output);
+
+	switch (mode) {
+	case DRM_MODE_DPMS_STANDBY:
+	case DRM_MODE_DPMS_SUSPEND:
+	case DRM_MODE_DPMS_OFF:
+		tegra_dsi_disable(dsi);
+		break;
+	case DRM_MODE_DPMS_ON:
+		tegra_dsi_enable(dsi);
+		break;
+	}
+}
+
+
+static void tegra_dsi_encoder_mode_set(struct drm_encoder *encoder,
+				       struct drm_display_mode *mode,
+				       struct drm_display_mode *adjusted)
+{
+	struct tegra_output *output = encoder_to_output(encoder);
+	struct tegra_dc *dc = to_tegra_dc(encoder->crtc);
+	struct tegra_dsi *dsi = to_dsi(output);
+	struct tegra_dsi_state *state;
+	u32 value;
+	int err;
+
+	err = tegra_dsi_pad_calibrate(dsi);
+	if (err < 0) {
+		dev_err(dsi->dev, "MIPI calibration failed: %d\n", err);
+		return;
+	}
+
+	state = tegra_dsi_get_state(dsi);
+
+	tegra_dsi_set_timeout(dsi, state->bclk, state->vrefresh);
+
+	/*
+	 * The D-PHY timing fields are expressed in byte-clock cycles, so
+	 * multiply the period by 8.
+	 */
+	tegra_dsi_set_phy_timing(dsi, state->period * 8, &state->timing);
+
+	if (output->panel)
+		drm_panel_prepare(output->panel);
+
+	//tegra_dsi_lock(dsi);
+
+	tegra_dsi_configure(dsi, dc->pipe, mode);
+
+	if (output->connector.display_info.bpc >= 8)
+		tegra_dc_writel(dc, DITHER_CONTROL_DISABLE,
+				DC_DISP_DISP_COLOR_CONTROL);
+
+	/* enable display controller */
+	value = tegra_dc_readl(dc, DC_DISP_DISP_WIN_OPTIONS);
+	value |= DSI_ENABLE;
+	tegra_dc_writel(dc, value, DC_DISP_DISP_WIN_OPTIONS);
+
+	tegra_dc_commit(dc);
+	//tegra_dsi_set_dc_active(dsi, true);
+
+	/* enable DSI controller */
+	tegra_dsi_encoder_dpms(encoder, DRM_MODE_DPMS_ON);
+
+	//tegra_dsi_unlock(dsi);
+
+	if (output->panel)
+		drm_panel_enable(output->panel);
+
+	return;
+}
+
+static const struct drm_encoder_helper_funcs tegra_dsi_encoder_helper_funcs = {
+	.disable = tegra_dsi_encoder_disable,
+	.enable = tegra_dsi_encoder_enable,
+	.prepare = tegra_dsi_encoder_prepare,
+	.commit = tegra_dsi_encoder_commit,
+	.mode_set = tegra_dsi_encoder_mode_set,
+	.atomic_check = tegra_dsi_encoder_atomic_check,
+};
+
 
 static int tegra_dsi_init(struct host1x_client *client)
 {
@@ -1307,7 +1416,7 @@ static ssize_t tegra_dsi_host_transfer(struct mipi_dsi_host *host,
 		tegra_dsi_writel(dsi, value, DSI_HOST_CONTROL);
 	}
 
-	value = DSI_CONTROL_LANES(0) | DSI_CONTROL_HOST_ENABLE;
+	value = DSI_CONTROL_LANES(dsi->lanes - 1) | DSI_CONTROL_HOST_ENABLE;
 	tegra_dsi_writel(dsi, value, DSI_CONTROL);
 
 	/* write packet header, ECC is generated by hardware */
