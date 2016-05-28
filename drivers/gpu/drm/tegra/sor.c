@@ -174,6 +174,7 @@ struct tegra_sor {
 	struct clk *clk;
 
 	struct drm_dp_aux *aux;
+	struct drm_dp_aux *ddc;
 
 	struct drm_info_list *debugfs_files;
 	struct drm_minor *minor;
@@ -1067,12 +1068,16 @@ static int tegra_sor_connector_get_modes(struct drm_connector *connector)
 	int err;
 
 	if (sor->aux)
-		drm_dp_aux_enable(sor->aux);
+		drm_dp_aux_enable(sor->aux, DRM_DP_AUX_MODE_AUX);
+	else if(sor->ddc)
+		drm_dp_aux_enable(sor->ddc, DRM_DP_AUX_MODE_I2C);
 
 	err = tegra_output_connector_get_modes(connector);
 
 	if (sor->aux)
 		drm_dp_aux_disable(sor->aux);
+	else if(sor->ddc)
+		drm_dp_aux_disable(sor->ddc);
 
 	return err;
 }
@@ -1209,7 +1214,7 @@ static void tegra_sor_edp_enable(struct drm_encoder *encoder)
 	if (output->panel)
 		drm_panel_prepare(output->panel);
 
-	err = drm_dp_aux_enable(sor->aux);
+	err =	drm_dp_aux_enable(sor->aux, DRM_DP_AUX_MODE_AUX);
 	if (err < 0)
 		dev_err(sor->dev, "failed to enable DP: %d\n", err);
 
@@ -2389,6 +2394,17 @@ static int tegra_sor_probe(struct platform_device *pdev)
 
 		if (!sor->aux)
 			return -EPROBE_DEFER;
+
+	} else {
+
+		np = of_parse_phandle(pdev->dev.of_node, "nvidia,i2c-dpaux", 0);
+		if (np) {
+			sor->ddc = drm_dp_aux_find_by_of_node(np);
+			of_node_put(np);
+
+			if (!sor->ddc)
+				return -EPROBE_DEFER;
+		}
 	}
 
 	if (!sor->aux) {
