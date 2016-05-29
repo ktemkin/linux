@@ -2092,6 +2092,7 @@ static struct tegra_clk tegra210_clks[tegra_clk_max] __initdata = {
 	[tegra_clk_clk72Mhz_8] = { .dt_id = TEGRA210_CLK_CLK72MHZ, .present = true },
 	[tegra_clk_vic03_8] = { .dt_id = TEGRA210_CLK_VIC03, .present = true },
 	[tegra_clk_dpaux] = { .dt_id = TEGRA210_CLK_DPAUX, .present = true },
+	[tegra_clk_dpaux1] = { .dt_id = TEGRA210_CLK_DPAUX1, .present = true },
 	[tegra_clk_sor0] = { .dt_id = TEGRA210_CLK_SOR0, .present = true },
 	[tegra_clk_sor0_lvds] = { .dt_id = TEGRA210_CLK_SOR0_LVDS, .present = true },
 	[tegra_clk_gpu] = { .dt_id = TEGRA210_CLK_GPU, .present = true },
@@ -2278,6 +2279,7 @@ static struct tegra_devclk devclks[] __initdata = {
 	{ .con_id = "pll_c4_out2", .dt_id = TEGRA210_CLK_PLL_C4_OUT2 },
 	{ .con_id = "pll_c4_out3", .dt_id = TEGRA210_CLK_PLL_C4_OUT3 },
 	{ .con_id = "dpaux", .dt_id = TEGRA210_CLK_DPAUX },
+	{ .con_id = "dpaux1", .dt_id = TEGRA210_CLK_DPAUX1 },
 	{ .con_id = "sor0", .dt_id = TEGRA210_CLK_SOR0 },
 	{ .con_id = "emc", .dt_id = TEGRA210_CLK_EMC },
 	{ .con_id = "vic03", .dt_id = TEGRA210_CLK_VIC03 },
@@ -2487,12 +2489,10 @@ static __init void tegra210_periph_clk_init(void __iomem *clk_base,
 					1, 2);
 	clks[TEGRA210_CLK_XUSB_SS_DIV2] = clk;
 
-	clk = tegra_clk_register_periph_fixed("dpaux", "pll_p", 0, clk_base,
-					      1, 17, 181);
+	clk = tegra_clk_register_periph_fixed("dpaux", "pll_p", CLK_IGNORE_UNUSED, clk_base, 1, 17, 181);
 	clks[TEGRA210_CLK_DPAUX] = clk;
 
-	clk = tegra_clk_register_periph_fixed("dpaux1", "pll_p", 0, clk_base,
-					      1, 17, 207);
+	clk = tegra_clk_register_periph_fixed("dpaux1", "pll_p", CLK_IGNORE_UNUSED, clk_base, 1, 17, 207);
 	clks[TEGRA210_CLK_DPAUX1] = clk;
 
 	clk = tegra_clk_register_periph_fixed("sor_safe", "pll_p",
