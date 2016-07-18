@@ -112,7 +112,10 @@ mksysmap()
 
 sortextable()
 {
-	${objtree}/scripts/sortextable ${1}
+  DIR=$(mktemp -d)
+  cp ${1} ${DIR}/${1}
+	${objtree}/scripts/sortextable ${DIR}/${1}
+  cp ${DIR}/${1} ${1}
 }
 
 # Delete output files in case of error
